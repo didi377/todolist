@@ -1,142 +1,160 @@
+<!DOCTYPE html>
 <html>
-    <head>
-        <title>To-Do List</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" 
-        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-        <style>
-            .list-group-item { background-color: #f8f9fa; }
-            .modal-header, .modal-footer { background-color: #f1f1f1; }
-            .task-list-container { max-width: 600px; }
-            .task-list-container h1 { margin-bottom: 20px; }
-            .btn-group-vertical { width: 100%; }
-            /* New CSS to position buttons at the top-right corner */
-            .task-item {
-                position: relative;
+<head>
+    <title>To-Do List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color:rgb(144, 141, 147);
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            background-color: cadetblue;
+            padding: 30px;
+            margin-top: 50px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .list-group-item {
+            background-color:rgb(255, 255, 255);
+            border-color: #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+            .badge {
+                font-size: 0.9rem;
+                border-radius: 10px;
             }
-            .task-buttons {
-                position: absolute;
-                top: 10px;
-                right: 10px;
-            }
-        </style>
-    </head>
 
-    <body>
-        <div class="d-flex justify-content-center align-items-center mt-5">
-            <div class="task-list-container p-4 rounded shadow-lg bg-light">
-                <h1 class="text-center">ToDoList</h1>
-                <!-- Task Form -->
-                <form method="post" action="<?php echo site_url('todo/add'); ?>" class="form-control bg-success p-4 rounded">
-                    <div id="task" class="m-1">
-                        <input type="text" name="task" required class="form-control mb-3" placeholder="Nama tugas">
-                    </div>
-                    
-                    <div id="subtasks" class="m-1">
-                        <input class="form-control mb-3" type="text" name="subtask[]" placeholder="Subtask (contoh: jadual pelajaran)">
-                    </div>
 
-                    <div class="mb-3">
-                        <input type="date" name="deadline" id="deadline" class="form-control" required>
-                    </div>
+        .task-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
 
-                  
+    </style>
+</head>
 
-                    <div class="d-flex justify-content-start mt-3">
-                          <button class="btn btn-warning" type="button" onclick="addSubtask()">Tambah Subtask</button>
-                         <button class="btn btn-primary" type="submit">Simpan Tugas</button>
-                    </div>
-                </form>
+<body>
+<div class="container w-75">
+    <h1 class="text-center">📝 To-Do List dijah</h1>
 
-              <!-- Task List -->
-<ul class="list-group mt-4">
-<?php foreach ($tasks as $task): ?>
-    <li class="list-group-item align-items-center mb-3 task-item">
-        <div class="d-flex justify-content-between">
-            <strong class="text-success"><?php echo $task->task; ?></strong>
-            <small class="text-muted text-start" style="flex: 1;">Tanggal: <?php echo date('d M Y', strtotime($task->deadline)); ?></small>
+    <form method="post" action="<?php echo site_url('todo/add'); ?>" class="mb-4">
+        <div class="mb-3">
+            <label for="task">Task</label>
+            <input type="text" name="task" required class="form-control" placeholder="Task">
         </div>
-        <form method="post" action="<?php echo site_url('todo/update_status/' . $task->id); ?>" class="mt-2">
-        <input type="hidden" name="status" value="<?php echo $task->status == 'done' ? 'pending' : 'done'; ?>">
-        <button type="submit" class="btn btn-sm <?php echo $task->status == 'done' ? 'btn-success' : 'btn-secondary'; ?>">
-            <?php echo $task->status == 'done' ? '✔ Sudah Dikerjakan' : '❌ Belum Dikerjakan'; ?>
-        </button>
-    </form>
-        <div>
-            <ul class="list-unstyled mt-2">
-                <?php foreach ($task->subtasks as $subtask): ?>
-                    <li>- <span class="text-success"><?php echo $subtask->subtask; ?></span></li>
-                <?php endforeach; ?>
-            </ul>
+        <div class="mb-3">
+            <label for="deadline">Tanggal Pengerjaan</label>
+            <input type="date" name="deadline" class="form-control" required>
         </div>
-
-        <!-- Task Buttons - positioned at the top right -->
-        <div class="task-buttons">
-            <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $task->id; ?>">Ubah</button>
-            <a href="<?php echo site_url('todo/delete/'.$task->id); ?>" class="btn btn-danger btn-sm" onclick='return confirm("Anda Yakin Ingin Menghapus?")'>Hapus</a>
-        </div>
-
-        <!-- Edit Modal -->
-        <div class="modal fade" id="editModal<?php echo $task->id; ?>" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="editModalLabel">Edit Task</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <form method="post" action="<?php echo site_url('todo/edit/'.$task->id); ?>">
-                        <div class="modal-body">
-                            <!-- Task Title -->
-                            <div class="mb-3">
-                                <input type="text" name="task" class="form-control" value="<?php echo $task->task; ?>" required>
-                            </div>
-
-                            <!-- Subtasks -->
-                            <div id="subtasks<?php echo $task->id; ?>">
-                                <?php foreach ($task->subtasks as $subtask): ?>
-                                    <div class="mb-3">
-                                        <input type="text" name="subtasks[]" class="form-control" value="<?php echo $subtask->subtask; ?>" placeholder="Subtask">
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                            <!-- Button to add a new subtask -->
-                            <div class="mb-3">
-                                <button type="button" class="btn btn-warning" onclick="addSubtask(<?php echo $task->id; ?>)">Tambah Subtask</button>
-                            </div>
-
-                            <!-- Deadline (Tanggal) -->
-                            <div class="mb-3">
-                                <label for="deadline" class="form-label">Tanggal</label>
-                                <input type="date" name="deadline" id="deadline" class="form-control" value="<?php echo date('Y-m-d', strtotime($task->deadline)); ?>" required>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kembali</button>
-                            <button type="submit" class="btn btn-primary">Simpan</button>
-                        </div>
-                    </form>
-                </div>
+        <div class="mb-3">
+            <label>Subtask</label>
+            <div id="subtasks">
+                <input class="form-control mb-2" type="text" name="subtasks[]" placeholder="Subtask">
             </div>
+            <button type="button" class="btn btn-primary btn-sm" onclick="addSubtask()">+ Tambah Subtask</button>
         </div>
-    </li>
-<?php endforeach; ?>
-</ul>
+        <div class="mb-3">
+            <label>Status</label>
+            <select name="status" class="form-select" required>
+                <option value="Belum Selesai">Belum Selesai</option>
+                <option value="Selesai">Selesai</option>
+            </select>
+        </div>
+        <div class="text-end">
+            <button class="btn btn-primary" type="submit">Simpan Tugas</button>
+        </div>
+    </form>
+
+    <ul class="list-group">
+        <?php foreach ($tasks as $task): ?>
+            <li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="task-title"><?php echo $task->task; ?></div>
+                        <div class="small-text">Tanggal Pengerjaan: <?php echo date('d M Y', strtotime($task->deadline)); ?></div>
+                        <span class="badge bg-<?php echo $task->status == 'Selesai' ? 'success' : 'secondary'; ?> mt-1">
+                            <?php echo $task->status; ?>
+                        </span>
+
+
+                        <?php if (!empty($task->subtasks)): ?>
+                            <ul class="mt-2 ps-4 small-text">
+                                <?php foreach ($task->subtasks as $subtask): ?>
+                                    <li><?php echo $subtask->subtask; ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-warning mb-1" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $task->id; ?>">Edit</button>
+                        <a href="<?php echo site_url('todo/delete/'.$task->id); ?>" class="btn btn-sm btn-outline-danger">Hapus</a>
+                    </div>
+                </div>
+            </li>
+
+            <div class="modal fade" id="editModal<?php echo $task->id; ?>" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="<?php echo site_url('todo/edit/'.$task->id); ?>">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Tugas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+    <input type="text" name="task" class="form-control mb-3" value="<?php echo $task->task; ?>" required>
+    <input type="date" name="deadline" class="form-control mb-3" value="<?php echo $task->deadline; ?>" required>
+    
+    <label>Status</label>
+    <div class="d-flex mb-3">
+        <div class="me-2">
+            <input type="radio" name="status" value="Belum Selesai" id="belumSelesai<?php echo $task->id; ?>" <?php if ($task->status == 'Belum Selesai') echo 'checked'; ?>>
+            <label for="belumSelesai<?php echo $task->id; ?>">Belum Selesai</label>
+        </div>
+        <div>
+            <input type="radio" name="status" value="Selesai" id="selesai<?php echo $task->id; ?>" <?php if ($task->status == 'Selesai') echo 'checked'; ?>>
+            <label for="selesai<?php echo $task->id; ?>">Selesai</label>
+        </div>
+    </div>
+    
+    <label>Subtask</label>
+    <div id="edit-subtasks<?php echo $task->id; ?>">
+        <?php foreach ($task->subtasks as $subtask): ?>
+            <input type="text" name="subtasks[]" class="form-control mb-2" value="<?php echo $subtask->subtask; ?>">
+        <?php endforeach; ?>
+    </div>
+    <button type="button" class="btn btn-primary btn-sm" onclick="addEditSubtask(<?php echo $task->id; ?>)">+ Tambah Subtask</button>
+</div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+        <?php endforeach; ?>
+    </ul>
+</div>
 
 <script>
-    // Function to add subtask dynamically
-    function addSubtask(taskId) {
-        var div = document.createElement('div');
-        div.classList.add('mb-3');
-        div.innerHTML = '<input type="text" name="subtask[]" class="form-control" placeholder="Subtask">';
-        document.getElementById('subtasks' + taskId).appendChild(div);
+    function addSubtask() {
+        const div = document.createElement('div');
+        div.innerHTML = '<input class="form-control mb-2" type="text" name="subtasks[]" placeholder="Subtask">';
+        document.getElementById('subtasks').appendChild(div);
     }
+
+    function addEditSubtask(taskId) {
+    const div = document.createElement('div');
+    div.innerHTML = '<input class="form-control mb-2" type="text" name="subtasks[]" placeholder="Subtask">';
+    document.getElementById('edit-subtasks' + taskId).appendChild(div);
+}
 </script>
 
-
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" 
-        integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" 
-        integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" 
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    </body>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
